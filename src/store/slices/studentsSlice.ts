@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { v4 as uuidv4 } from '@reduxjs/toolkit/dist/query/core/buildMiddleware/cacheLifecycle';
+import { v4 as uuidv4 } from 'uuid';
 import { Student } from '../../types/student.types';
 
 interface StudentsState {
