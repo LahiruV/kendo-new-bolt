@@ -1,114 +1,130 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { v4 as uuidv4 } from 'uuid';
-import { Payment, MonthlyPayment } from '../../types/payment.types';
+import { Payment } from '../../types';
 
 interface PaymentsState {
   payments: Payment[];
-  monthlyPayments: MonthlyPayment[];
-  isLoading: boolean;
+  loading: boolean;
   error: string | null;
 }
 
 const initialState: PaymentsState = {
-  payments: [],
-  monthlyPayments: [],
-  isLoading: false,
+  payments: [
+    {
+      id: '1',
+      studentId: '1',
+      amount: 1200,
+      month: 'January',
+      year: 2023,
+      isPaid: true,
+      paidDate: '2023-01-05T10:30:00Z',
+    },
+    {
+      id: '2',
+      studentId: '2',
+      amount: 1500,
+      month: 'January',
+      year: 2023,
+      isPaid: true,
+      paidDate: '2023-01-07T14:45:00Z',
+    },
+    {
+      id: '3',
+      studentId: '3',
+      amount: 1100,
+      month: 'January',
+      year: 2023,
+      isPaid: true,
+      paidDate: '2023-01-10T09:15:00Z',
+    },
+    {
+      id: '4',
+      studentId: '4',
+      amount: 1800,
+      month: 'January',
+      year: 2023,
+      isPaid: false,
+      paidDate: null,
+    },
+    {
+      id: '5',
+      studentId: '1',
+      amount: 1200,
+      month: 'February',
+      year: 2023,
+      isPaid: true,
+      paidDate: '2023-02-05T11:30:00Z',
+    },
+    {
+      id: '6',
+      studentId: '2',
+      amount: 1500,
+      month: 'February',
+      year: 2023,
+      isPaid: true,
+      paidDate: '2023-02-08T15:45:00Z',
+    },
+    {
+      id: '7',
+      studentId: '3',
+      amount: 1100,
+      month: 'February',
+      year: 2023,
+      isPaid: false,
+      paidDate: null,
+    },
+    {
+      id: '8',
+      studentId: '4',
+      amount: 1800,
+      month: 'February',
+      year: 2023,
+      isPaid: false,
+      paidDate: null,
+    },
+  ],
+  loading: false,
   error: null,
 };
 
-export const paymentsSlice = createSlice({
+const paymentsSlice = createSlice({
   name: 'payments',
   initialState,
   reducers: {
-    fetchPaymentsStart: (state) => {
-      state.isLoading = true;
-      state.error = null;
-    },
-    fetchPaymentsSuccess: (state, action: PayloadAction<Payment[]>) => {
-      state.isLoading = false;
-      state.payments = action.payload;
-    },
-    fetchPaymentsFailure: (state, action: PayloadAction<string>) => {
-      state.isLoading = false;
-      state.error = action.payload;
-    },
-    addPayment: (state, action: PayloadAction<Omit<Payment, 'id'>>) => {
-      const newPayment: Payment = {
-        id: uuidv4(),
-        ...action.payload,
-        createdAt: new Date().toISOString(),
-      };
-      state.payments.push(newPayment);
+    addPayment: (state, action: PayloadAction<Payment>) => {
+      state.payments.push(action.payload);
     },
     updatePayment: (state, action: PayloadAction<Payment>) => {
-      const index = state.payments.findIndex((p) => p.id === action.payload.id);
+      const index = state.payments.findIndex(p => p.id === action.payload.id);
       if (index !== -1) {
         state.payments[index] = action.payload;
       }
     },
     removePayment: (state, action: PayloadAction<string>) => {
-      state.payments = state.payments.filter((p) => p.id !== action.payload);
+      state.payments = state.payments.filter(p => p.id !== action.payload);
     },
-    updateStudentPaymentStatus: (
-      state,
-      action: PayloadAction<{
-        studentId: string;
-        classId: string;
-        month: number;
-        year: number;
-        isPaid: boolean;
-      }>
-    ) => {
-      const { studentId, classId, month, year, isPaid } = action.payload;
-      
-      // Check if payment exists
-      const paymentIndex = state.payments.findIndex(
-        (p) =>
-          p.studentId === studentId &&
-          p.classId === classId &&
-          p.month === month &&
-          p.year === year
-      );
-
-      if (isPaid) {
-        // Add new payment or update existing
-        if (paymentIndex === -1) {
-          state.payments.push({
-            id: uuidv4(),
-            studentId,
-            classId,
-            month,
-            year,
-            isPaid,
-            paidAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-          });
-        } else {
-          state.payments[paymentIndex].isPaid = true;
-          state.payments[paymentIndex].paidAt = new Date().toISOString();
-        }
-      } else if (paymentIndex !== -1) {
-        // Mark as unpaid
-        state.payments[paymentIndex].isPaid = false;
-        state.payments[paymentIndex].paidAt = null;
+    togglePaymentStatus: (state, action: PayloadAction<{id: string, isPaid: boolean}>) => {
+      const index = state.payments.findIndex(p => p.id === action.payload.id);
+      if (index !== -1) {
+        state.payments[index].isPaid = action.payload.isPaid;
+        state.payments[index].paidDate = action.payload.isPaid ? new Date().toISOString() : null;
       }
     },
-    // Update monthly payments summary
-    updateMonthlyPayments: (state, action: PayloadAction<MonthlyPayment[]>) => {
-      state.monthlyPayments = action.payload;
+    setPaymentLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+    setPaymentError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
     },
   },
 });
 
 export const {
-  fetchPaymentsStart,
-  fetchPaymentsSuccess,
-  fetchPaymentsFailure,
   addPayment,
   updatePayment,
   removePayment,
-  updateStudentPaymentStatus,
-  updateMonthlyPayments,
+  togglePaymentStatus,
+  setPaymentLoading,
+  setPaymentError,
 } = paymentsSlice.actions;
 
 export default paymentsSlice.reducer;

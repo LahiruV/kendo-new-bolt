@@ -1,3 +1,238 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary-50: 240, 248, 255;
+    --color-primary-100: 224, 240, 255;
+    --color-primary-200: 179, 215, 255;
+    --color-primary-300: 102, 181, 227;
+    --color-primary-400: 51, 153, 204;
+    --color-primary-500: 0, 122, 204;
+    --color-primary-600: 0, 90, 158;
+    --color-primary-700: 0, 77, 135;
+    --color-primary-800: 0, 64, 112;
+    --color-primary-900: 0, 51, 89;
+
+    --color-secondary-50: 230, 249, 248;
+    --color-secondary-100: 205, 243, 240;
+    --color-secondary-200: 167, 231, 226;
+    --color-secondary-300: 115, 209, 201;
+    --color-secondary-400: 64, 186, 175;
+    --color-secondary-500: 32, 178, 170;
+    --color-secondary-600: 25, 142, 136;
+    --color-secondary-700: 21, 107, 102;
+    --color-secondary-800: 20, 85, 82;
+    --color-secondary-900: 19, 71, 68;
+
+    --color-accent-50: 244, 248, 251;
+    --color-accent-100: 225, 236, 244;
+    --color-accent-200: 214, 224, 233;
+    --color-accent-300: 191, 205, 219;
+    --color-accent-400: 153, 179, 204;
+    --color-accent-500: 51, 153, 204;
+    --color-accent-600: 41, 122, 163;
+    --color-accent-700: 31, 92, 122;
+    --color-accent-800: 20, 61, 82;
+    --color-accent-900: 10, 31, 41;
+
+    --color-success-50: 237, 247, 237;
+    --color-success-100: 220, 237, 220;
+    --color-success-200: 193, 223, 193;
+    --color-success-300: 152, 199, 152;
+    --color-success-400: 111, 175, 111;
+    --color-success-500: 92, 184, 92;
+    --color-success-600: 73, 147, 73;
+    --color-success-700: 55, 110, 55;
+    --color-success-800: 27, 94, 32;
+    --color-success-900: 21, 71, 24;
+
+    --color-warning-50: 255, 248, 225;
+    --color-warning-100: 255, 243, 204;
+    --color-warning-200: 255, 235, 153;
+    --color-warning-300: 255, 224, 102;
+    --color-warning-400: 255, 213, 51;
+    --color-warning-500: 240, 173, 78;
+    --color-warning-600: 192, 138, 62;
+    --color-warning-700: 144, 104, 47;
+    --color-warning-800: 255, 111, 0;
+    --color-warning-900: 255, 87, 34;
+
+    --color-error-50: 254, 235, 235;
+    --color-error-100: 254, 216, 216;
+    --color-error-200: 253, 188, 188;
+    --color-error-300: 249, 135, 135;
+    --color-error-400: 244, 96, 96;
+    --color-error-500: 217, 83, 79;
+    --color-error-600: 173, 66, 63;
+    --color-error-700: 130, 50, 47;
+    --color-error-800: 173, 20, 20;
+    --color-error-900: 142, 14, 14;
+
+    --color-neutral-50: 250, 250, 250;
+    --color-neutral-100: 245, 245, 245;
+    --color-neutral-200: 229, 229, 229;
+    --color-neutral-300: 212, 212, 212;
+    --color-neutral-400: 163, 163, 163;
+    --color-neutral-500: 115, 115, 115;
+    --color-neutral-600: 82, 82, 82;
+    --color-neutral-700: 64, 64, 64;
+    --color-neutral-800: 38, 38, 38;
+    --color-neutral-900: 23, 23, 23;
+  }
+
+  html {
+    @apply text-neutral-800;
+  }
+
+  body {
+    @apply bg-neutral-50;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+}
+
+@layer components {
+  /* Kendo Primary Color Overrides */
+  .k-button.k-button-md.k-button-solid-primary,
+  .k-button.k-button-md.k-button-solid-primary:hover {
+    background-color: rgb(0, 122, 204) !important;
+    border-color: rgb(0, 122, 204) !important;
+  }
+
+  .k-button.k-button-md.k-button-solid-primary:active,
+  .k-button.k-button-md.k-button-solid-primary.k-active {
+    background-color: rgb(0, 90, 158) !important;
+    border-color: rgb(0, 90, 158) !important;
+  }
+
+  /* Dropdown Overrides */
+  .k-dropdown .k-dropdown-wrap.k-state-focused,
+  .k-dropdown .k-dropdown-wrap.k-state-active,
+  .k-dropdowntree .k-dropdown-wrap.k-state-focused,
+  .k-dropdowntree .k-dropdown-wrap.k-state-active {
+    border-color: rgb(0, 122, 204) !important;
+    box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.25) !important;
+  }
+
+  .k-list-container .k-list .k-item.k-state-selected {
+    background-color: rgb(0, 122, 204) !important;
+    color: white !important;
+  }
+
+  .k-list-container .k-list .k-item:hover,
+  .k-list-container .k-list .k-item.k-state-hover {
+    background-color: rgba(0, 122, 204, 0.1) !important;
+    color: rgb(0, 90, 158) !important;
+  }
+
+  /* Form Controls */
+  .k-input:focus,
+  .k-input.k-focus,
+  .k-textbox:focus,
+  .k-textbox.k-focus,
+  .k-textarea:focus,
+  .k-textarea.k-focus {
+    border-color: rgb(0, 122, 204) !important;
+    box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.25) !important;
+  }
+
+  /* Grid Focus and Selection */
+  .k-grid tbody tr.k-state-selected > td {
+    background-color: rgba(0, 122, 204, 0.1) !important;
+  }
+
+  .k-grid .k-table-row.k-state-selected {
+    background-color: rgba(0, 122, 204, 0.1) !important;
+  }
+
+  .k-button.k-button-md {
+    @apply rounded-md;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .k-button.k-button-primary {
+    background-color: rgb(0, 122, 204) !important;
+    color: white !important;
+  }
+
+  .k-button.k-button-primary:hover {
+    background-color: rgb(0, 90, 158) !important;
+  }
+
+  .k-button.k-button-primary:active {
+    background-color: rgb(0, 77, 135) !important;
+  }
+  
+  .k-button.k-button-secondary {
+    @apply bg-secondary-500 text-white hover:bg-secondary-600 active:bg-secondary-700;
+  }
+  
+  .k-button.k-button-accent {
+    @apply bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700;
+  }
+
+  .k-animation-container {
+    z-index: 9999 !important;
+  }
+
+  .k-grid-header, .k-grid-footer {
+    @apply bg-neutral-50;
+  }
+
+  .k-grid-header .k-header {
+    @apply font-semibold text-neutral-700;
+  }
+
+
+  /* Kendo Dropdown Styles */
+  .k-dropdown {
+    border-color: rgb(var(--color-neutral-300)) !important;
+  }
+
+  .k-dropdown:hover,
+  .k-dropdown.k-state-hover {
+    border-color: rgb(var(--color-primary-400)) !important;
+  }
+
+  .k-dropdown:focus,
+  .k-dropdown.k-state-focused,
+  .k-dropdown.k-focus {
+    border-color: rgb(var(--color-primary-500)) !important;
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2) !important;
+  }
+
+  .k-dropdown .k-dropdown-wrap {
+    background-color: white !important;
+    border-color: rgb(var(--color-neutral-300)) !important;
+  }
+
+  .k-dropdown .k-dropdown-wrap:hover,
+  .k-dropdown .k-dropdown-wrap.k-state-hover {
+    background-color: rgb(var(--color-neutral-50)) !important;
+    border-color: rgb(var(--color-primary-400)) !important;
+  }
+
+  .k-dropdown .k-dropdown-wrap.k-state-focused,
+  .k-dropdown .k-dropdown-wrap.k-state-active {
+    border-color: rgb(var(--color-primary-500)) !important;
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2) !important;
+  }
+
+  .k-list-container .k-list .k-item.k-state-selected {
+    background-color: rgb(var(--color-primary-500)) !important;
+    color: white !important;
+  }
+
+  .k-list-container .k-list .k-item:hover,
+  .k-list-container .k-list .k-item.k-state-hover {
+    background-color: rgb(var(--color-primary-50)) !important;
+    color: rgb(var(--color-primary-700)) !important;
+  }
+
+  .k-list-container .k-list .k-item:focus,
+  .k-list-container .k-list .k-item.k-state-focused {
+    background-color: rgb(var(--color-primary-100)) !important;
+    box-shadow: none !important;
+  }
+}

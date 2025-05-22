@@ -1,263 +1,289 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
-import { Card } from '@progress/kendo-react-layout';
-import {
-  Chart,
-  ChartSeries,
-  ChartSeriesItem,
-  ChartCategoryAxis,
+import { 
+  Users, 
+  BookOpen, 
+  DollarSign,
+  ArrowUpRight,
+} from 'lucide-react';
+import { 
+  Chart, 
+  ChartSeries, 
+  ChartSeriesItem, 
+  ChartCategoryAxis, 
   ChartCategoryAxisItem,
-  ChartTitle,
   ChartLegend,
   ChartTooltip,
-  ChartValueAxis,
-  ChartValueAxisItem,
+  ChartTitle
 } from '@progress/kendo-react-charts';
 import 'hammerjs';
-import { RootState } from '../store';
-import { MonthlyPayment } from '../types/payment.types';
-import { Student } from '../types/student.types';
-import { Class } from '../types/class.types';
-import PageHeader from '../components/common/PageHeader';
 
-const Dashboard = () => {
+import { RootState } from '../store';
+import PageHeader from '../components/ui/PageHeader';
+import Card from '../components/ui/Card';
+import StatCard from '../components/ui/StatCard';
+import KendoGrid from '../components/ui/KendoGrid';
+import KendoButton from '../components/ui/KendoButton';
+import { GridColumn } from '@progress/kendo-react-grid';
+import { formatCurrency, getMonths } from '../utils/dateUtils';
+import { useNavigate } from 'react-router-dom';
+
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { classes } = useSelector((state: RootState) => state.classes);
   const { students } = useSelector((state: RootState) => state.students);
   const { payments } = useSelector((state: RootState) => state.payments);
+
+  // Calculate statistics
+  const totalStudents = students.length;
+  const activeStudents = students.filter(s => s.isActive).length;
+  const totalClasses = classes.length;
   
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [monthlyIncome, setMonthlyIncome] = useState<MonthlyPayment[]>([]);
-  const [studentsPerClass, setStudentsPerClass] = useState<{ name: string; count: number }[]>([]);
-  const [paymentStatus, setPaymentStatus] = useState<{ name: string; paid: number; unpaid: number }[]>([]);
-  
-  useEffect(() => {
-    // Calculate total yearly income
-    const totalAmount = payments.reduce((sum, payment) => {
-      if (payment.isPaid) {
-        const classItem = classes.find((c) => c.id === payment.classId);
-        return sum + (classItem?.monthlyFee || 0);
-      }
-      return sum;
-    }, 0);
-    setTotalIncome(totalAmount);
+  const totalPayments = payments.filter(p => p.isPaid).reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingPayments = payments.filter(p => !p.isPaid).reduce((sum, payment) => sum + payment.amount, 0);
 
-    // Calculate monthly income
-    const months: Record<string, { total: number; month: number; year: number }> = {};
-    payments.forEach((payment) => {
-      if (payment.isPaid) {
-        const key = `${payment.year}-${payment.month}`;
-        const classItem = classes.find((c) => c.id === payment.classId);
-        const fee = classItem?.monthlyFee || 0;
-        
-        if (!months[key]) {
-          months[key] = { total: 0, month: payment.month, year: payment.year };
-        }
-        
-        months[key].total += fee;
-      }
-    });
+  // Calculate class-wise student distribution
+  const classStudentCounts = classes.map(cls => {
+    const studentCount = students.filter(s => s.classId === cls.id).length;
+    return {
+      classId: cls.id,
+      className: cls.name,
+      studentCount
+    };
+  });
 
-    const monthsArray = Object.values(months).map((item) => ({
-      month: item.month,
-      year: item.year,
-      totalAmount: item.total,
-      paidAmount: item.total,
-      paidCount: 0,
-      totalCount: 0,
-    }));
+  // Calculate monthly payment statistics
+  const months = getMonths();
+  const monthlyPaymentStats = months.map(month => {
+    const monthPayments = payments.filter(p => p.month === month);
+    const paid = monthPayments.filter(p => p.isPaid).length;
+    const unpaid = monthPayments.filter(p => !p.isPaid).length;
     
-    // Sort by year and month
-    monthsArray.sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year;
-      return a.month - b.month;
-    });
+    return {
+      month,
+      paid,
+      unpaid
+    };
+  });
+
+  // Monthly revenue data
+  const monthlyRevenueData = months.map(month => {
+    const revenue = payments
+      .filter(p => p.month === month && p.isPaid)
+      .reduce((sum, payment) => sum + payment.amount, 0);
     
-    setMonthlyIncome(monthsArray);
-
-    // Calculate students per class
-    const classCountMap = classes.reduce<Record<string, { name: string; count: number }>>(
-      (acc, classItem) => {
-        acc[classItem.id] = { name: classItem.name, count: 0 };
-        return acc;
-      },
-      {}
-    );
-
-    students.forEach((student) => {
-      if (classCountMap[student.classId]) {
-        classCountMap[student.classId].count += 1;
-      }
-    });
-
-    setStudentsPerClass(Object.values(classCountMap));
-
-    // Calculate paid vs unpaid per class
-    const paymentStatusMap = classes.reduce<
-      Record<string, { name: string; paid: number; unpaid: number }>
-    >((acc, classItem) => {
-      acc[classItem.id] = { name: classItem.name, paid: 0, unpaid: 0 };
-      return acc;
-    }, {});
-
-    // Get current month and year
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1; // 1-12
-    const currentYear = now.getFullYear();
-
-    // Count students per class
-    const classStudents: Record<string, Student[]> = {};
-    students.forEach((student) => {
-      if (!classStudents[student.classId]) {
-        classStudents[student.classId] = [];
-      }
-      classStudents[student.classId].push(student);
-    });
-
-    // Count paid vs unpaid
-    Object.entries(classStudents).forEach(([classId, studentsInClass]) => {
-      const totalStudents = studentsInClass.length;
-      
-      // Find how many have paid for current month
-      const paidCount = payments.filter(
-        (p) =>
-          p.classId === classId &&
-          p.month === currentMonth &&
-          p.year === currentYear &&
-          p.isPaid
-      ).length;
-      
-      if (paymentStatusMap[classId]) {
-        paymentStatusMap[classId].paid = paidCount;
-        paymentStatusMap[classId].unpaid = totalStudents - paidCount;
-      }
-    });
-
-    setPaymentStatus(Object.values(paymentStatusMap));
-  }, [classes, students, payments]);
-
-  const monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
+    return revenue;
+  });
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader 
-        title="Dashboard" 
+        title="Dashboard"
         subtitle="Overview of your class management system"
       />
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-6">
-          <h3 className="mb-2 text-lg font-medium text-gray-700">Total Classes</h3>
-          <p className="text-3xl font-bold text-primary">{classes.length}</p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div onClick={() => navigate('/students/all')} className="cursor-pointer">
+          <StatCard 
+            title="Total Students" 
+            value={totalStudents} 
+            icon={<Users size={20} />}
+            trend={{ value: 12, isPositive: true }}
+            color="primary"
+          />
+        </div>
+        
+        <StatCard 
+          title="Active Students" 
+          value={activeStudents} 
+          icon={<Users size={20} />}
+          trend={{ value: 8, isPositive: true }}
+          color="success"
+        />
+        
+        <StatCard 
+          title="Total Classes" 
+          value={totalClasses} 
+          icon={<BookOpen size={20} />}
+          color="secondary"
+        />
+        
+        <StatCard 
+          title="Total Revenue" 
+          value={formatCurrency(totalPayments)} 
+          icon={<DollarSign size={20} />}
+          trend={{ value: 15, isPositive: true }}
+          color="accent"
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card title="Monthly Revenue" subtitle="Revenue collected per month">
+          <div className="h-80">
+            <Chart>
+              <ChartTitle text="Monthly Revenue" />
+              <ChartLegend position="top" orientation="horizontal" />
+              <ChartCategoryAxis>
+                <ChartCategoryAxisItem categories={months} title={{ text: 'Month' }} />
+              </ChartCategoryAxis>
+              <ChartSeries>
+                <ChartSeriesItem 
+                  type="column" 
+                  data={monthlyRevenueData} 
+                  name="Revenue" 
+                  color="#2D62ED"
+                />
+              </ChartSeries>
+              <ChartTooltip format="${0}" />
+            </Chart>
+          </div>
         </Card>
         
-        <Card className="p-6">
-          <h3 className="mb-2 text-lg font-medium text-gray-700">Total Students</h3>
-          <p className="text-3xl font-bold text-primary">{students.length}</p>
-        </Card>
-        
-        <Card className="p-6">
-          <h3 className="mb-2 text-lg font-medium text-gray-700">Active Students</h3>
-          <p className="text-3xl font-bold text-primary">
-            {students.filter((s) => s.isActive).length}
-          </p>
-        </Card>
-        
-        <Card className="p-6">
-          <h3 className="mb-2 text-lg font-medium text-gray-700">Total Income</h3>
-          <p className="text-3xl font-bold text-primary">${totalIncome}</p>
+        <Card title="Payment Status" subtitle="Paid vs unpaid status by month">
+          <div className="h-80">
+            <Chart>
+              <ChartTitle text="Payment Status by Month" />
+              <ChartLegend position="top" orientation="horizontal" />
+              <ChartCategoryAxis>
+                <ChartCategoryAxisItem categories={months.slice(0, 6)} title={{ text: 'Month' }} />
+              </ChartCategoryAxis>
+              <ChartSeries>
+                <ChartSeriesItem 
+                  type="column" 
+                  data={monthlyPaymentStats.slice(0, 6).map(stat => stat.paid)} 
+                  name="Paid" 
+                  color="#4CAF50" 
+                  stack="status"
+                />
+                <ChartSeriesItem 
+                  type="column" 
+                  data={monthlyPaymentStats.slice(0, 6).map(stat => stat.unpaid)} 
+                  name="Unpaid" 
+                  color="#F44336" 
+                  stack="status"
+                />
+              </ChartSeries>
+              <ChartTooltip format="{0} students" />
+            </Chart>
+          </div>
         </Card>
       </div>
-
-      {/* Charts */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Monthly Income Chart */}
-        <Card className="p-6">
-          <h3 className="mb-4 text-lg font-medium text-gray-700">Monthly Income</h3>
-          <Chart style={{ height: 300 }}>
-            <ChartTitle text="" />
-            <ChartLegend position="bottom" />
-            <ChartTooltip format="${0}" />
-            <ChartCategoryAxis>
-              <ChartCategoryAxisItem 
-                categories={monthlyIncome.map(
-                  (m) => `${monthNames[m.month - 1]} ${m.year}`
-                )} 
-              />
-            </ChartCategoryAxis>
-            <ChartValueAxis>
-              <ChartValueAxisItem title={{ text: 'Amount ($)' }} min={0} />
-            </ChartValueAxis>
-            <ChartSeries>
-              <ChartSeriesItem
-                type="column"
-                data={monthlyIncome.map((m) => m.totalAmount)}
-                name="Monthly Income"
-                color="#0070f3"
-              />
-            </ChartSeries>
-          </Chart>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card 
+          title="Recent Students" 
+          subtitle="Latest enrolled students"
+          footer={
+            <div className="flex justify-end">
+              <KendoButton 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/students/all')}
+                icon={<ArrowUpRight size={16} />}
+              >
+                View All Students
+              </KendoButton>
+            </div>
+          }
+        >
+          <KendoGrid
+            data={students.slice(0, 5)}
+            gridHeight={300}
+            pageSize={5}
+          >
+            <GridColumn field="name" title="Student Name" />
+            <GridColumn
+              field="classId"
+              title="Class"
+              cell={(props) => {
+                const classObj = classes.find(c => c.id === props.dataItem.classId);
+                return <td>{classObj?.name || 'Unknown'}</td>;
+              }}
+            />
+            <GridColumn
+              field="isActive"
+              title="Status"
+              width="100px"
+              cell={(props) => (
+                <td>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    props.dataItem.isActive ? 'bg-success-100 text-success-800' : 'bg-error-100 text-error-800'
+                  }`}>
+                    {props.dataItem.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
+              )}
+            />
+          </KendoGrid>
         </Card>
-
-        {/* Students per Class Chart */}
-        <Card className="p-6">
-          <h3 className="mb-4 text-lg font-medium text-gray-700">Students per Class</h3>
-          <Chart style={{ height: 300 }}>
-            <ChartTitle text="" />
-            <ChartLegend position="bottom" />
-            <ChartTooltip format="{0} students" />
-            <ChartSeries>
-              <ChartSeriesItem
-                type="pie"
-                data={studentsPerClass.map((item) => ({
-                  category: item.name,
-                  value: item.count,
-                }))}
-                field="value"
-                categoryField="category"
-                colorField="color"
-              />
-            </ChartSeries>
-          </Chart>
+        
+        <Card 
+          title="Students per Class" 
+          subtitle="Distribution of students across classes"
+          footer={
+            <div className="flex justify-end">
+              <KendoButton 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/classes/all')}
+                icon={<ArrowUpRight size={16} />}
+              >
+                View All Classes
+              </KendoButton>
+            </div>
+          }
+        >
+          <KendoGrid
+            data={classStudentCounts}
+            gridHeight={300}
+            pageSize={5}
+          >
+            <GridColumn field="className" title="Class Name" />
+            <GridColumn field="studentCount" title="Students" width="120px" />
+          </KendoGrid>
         </Card>
-
-        {/* Paid vs Unpaid Chart */}
-        <Card className="p-6">
-          <h3 className="mb-4 text-lg font-medium text-gray-700">
-            Payment Status (Current Month)
-          </h3>
-          <Chart style={{ height: 300 }}>
-            <ChartTitle text="" />
-            <ChartLegend position="bottom" />
-            <ChartTooltip format="{0} students" />
-            <ChartSeries>
-              <ChartSeriesItem
-                type="column"
-                stack={true}
-                data={paymentStatus.map((item) => item.paid)}
-                name="Paid"
-                color="#22c55e"
-              />
-              <ChartSeriesItem
-                type="column"
-                stack={true}
-                data={paymentStatus.map((item) => item.unpaid)}
-                name="Unpaid"
-                color="#ef4444"
-              />
-            </ChartSeries>
-            <ChartCategoryAxis>
-              <ChartCategoryAxisItem 
-                categories={paymentStatus.map((item) => item.name)} 
-              />
-            </ChartCategoryAxis>
-            <ChartValueAxis>
-              <ChartValueAxisItem title={{ text: 'Number of Students' }} min={0} />
-            </ChartValueAxis>
-          </Chart>
+      </div>
+        
+      <div className="grid grid-cols-1 mt-6">
+        <Card 
+          title="Recent Payments" 
+          subtitle="Latest student payments"
+          footer={
+            <div className="flex justify-end">
+              <KendoButton 
+                onClick={() => navigate('/payments/all')}
+                variant="outline" 
+                size="sm"
+                icon={<ArrowUpRight size={16} />}
+              >
+                View All Payments
+              </KendoButton>
+            </div>
+          }
+        >
+          <KendoGrid
+            data={payments.filter(p => p.isPaid).slice(0, 5)}
+            gridHeight={300}
+            pageSize={5}
+          >
+            <GridColumn
+              field="studentId"
+              title="Student"
+              cell={(props) => {
+                const student = students.find(s => s.id === props.dataItem.studentId);
+                return <td>{student?.name || 'Unknown'}</td>;
+              }}
+            />
+            <GridColumn field="month" title="Month" width="120px" />
+            <GridColumn
+              field="amount"
+              title="Amount"
+              width="100px"
+              cell={(props) => (
+                <td>{formatCurrency(props.dataItem.amount)}</td>
+              )}
+            />
+          </KendoGrid>
         </Card>
       </div>
     </div>
